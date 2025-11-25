@@ -1,0 +1,103 @@
+import random
+import json
+import os
+from datetime import datetime
+
+trains = [
+    {"number": 101, "name": "Marwar Express", "source": "Jaipur", "destination": "Udaipur City", "departure_time": "2:35 PM", "arrival_time": "7:10 PM", "seats": 38},
+    {"number": 102, "name": "Coastal Link Express", "source": "Visakhapatnam", "destination": "Vijayawada", "departure_time": "6:20 PM", "arrival_time": "11:05 PM", "seats": 27},
+    {"number": 103, "name": "Ganga Valley Mail", "source": "Lucknow", "destination": "Varanasi", "departure_time": "9:10 AM", "arrival_time": "2:15 PM", "seats": 54},
+    {"number": 104, "name": "Malabar Coastal Express", "source": "Kochi Ernakulam", "destination": "Mangalore Central", "departure_time": "1:45 PM", "arrival_time": "6:20 PM", "seats": 22},
+    {"number": 105, "name": "Bengal Plains Express", "source": "Howrah", "destination": "Siliguri", "departure_time": "7:50 AM", "arrival_time": "12:40 PM", "seats": 41},
+    {"number": 106, "name": "Gujarat Mumbai Superfast", "source": "Ahmedabad", "destination": "Mumbai Central", "departure_time": "4:30 PM", "arrival_time": "9:05 PM", "seats": 63},
+    {"number": 107, "name": "East Coast Connector", "source": "Kolkata", "destination": "Bhubaneswar", "departure_time": "12:00 PM", "arrival_time": "5:15 PM", "seats": 19},
+    {"number": 108, "name": "Shatabdi Special", "source": "Delhi", "destination": "Lucknow", "departure_time": "6:05 AM", "arrival_time": "11:00 AM", "seats": 32},
+    {"number": 109, "name": "Southern Express", "source": "Chennai Central", "destination": "Bengaluru", "departure_time": "5:15 PM", "arrival_time": "10:25 PM", "seats": 45},
+    {"number": 110, "name": "Brahmaputra Mail", "source": "Patna", "destination": "Guwahati", "departure_time": "8:40 PM", "arrival_time": "2:10 AM", "seats": 29},
+    {"number": 111, "name": "Konkan Discovery Express", "source": "Pune", "destination": "Goa", "departure_time": "11:20 AM", "arrival_time": "4:30 PM", "seats": 50},
+    {"number": 112, "name": "Vindhya Link Express", "source": "Bhopal", "destination": "Indore", "departure_time": "3:55 PM", "arrival_time": "8:25 PM", "seats": 36},
+    {"number": 113, "name": "Tamil Heartland Express", "source": "Madurai", "destination": "Trichy", "departure_time": "10:45 AM", "arrival_time": "3:05 PM", "seats": 28},
+    {"number": 114, "name": "Uttar Bharat InterCity", "source": "Lucknow", "destination": "Kanpur Central", "departure_time": "8:25 AM", "arrival_time": "12:50 PM", "seats": 57},
+    {"number": 115, "name": "Central Plains Express", "source": "Nagpur", "destination": "Raipur", "departure_time": "2:10 PM", "arrival_time": "6:55 PM", "seats": 23}
+]
+
+
+bookings = []
+pnr_counter = random.randint(1000, 9999)
+BOOKINGS_FILE = "bookings.json"
+
+def load_data():
+    global bookings, pnr_counter
+    if os.path.exists(BOOKINGS_FILE):
+        bookings = json.load(open(BOOKINGS_FILE))
+        if bookings: pnr_counter = max(int(b['pnr'][1:]) for b in bookings) + 1
+
+def save_bookings(): json.dump(bookings, open(BOOKINGS_FILE, 'w'), indent=4)
+
+def generate_pnr():
+    global pnr_counter
+    pnr_counter += 1
+    return chr(random.randint(65, 90)) + str(pnr_counter)
+
+def show_trains():
+    print("\nAvailable Trains:")
+    print("-" * 121)
+    print(f"{'Train No':<9} | {'Train Name':<28} | {'From':<18} | {'To':<18} | {'Departure':<12} | {'Arrival':<12} | {'Seats':<5}|")
+    print("-" * 121)
+    for t in trains: print(f"{t['number']:<9} | {t['name']:<28} | {t['source']:<18} | {t['destination']:<18} | {t['departure_time']:<12} | {t['arrival_time']:<12} | {t['seats']:<5}|")
+    print("-" * 121)
+
+def book_ticket():
+    show_trains()
+    try: tno = int(input("\nEnter Train Number: "))
+    except: print("Invalid input."); return
+    train = next((t for t in trains if t["number"] == tno), None)
+    if not train: print("Train not found."); return
+    try: num = int(input("Tickets to book: "))
+    except: print("Invalid input."); return
+    if num <= 0 or train["seats"] < num: print("Not enough seats."); return
+    tickets = []
+    for i in range(num):
+        name = input(f"Passenger {i+1} name: ").strip()
+        if not name: print("Name required."); return
+        try: age = int(input("Age: "))
+        except: print("Invalid age."); return
+        if age <= 0 or age > 120: print("Invalid age."); return
+        pnr = generate_pnr()
+        bookings.append({"pnr": pnr, "train_no": train["number"], "train_name": train["name"], "passenger": name, "age": age, "departure_time": train["departure_time"], "arrival_time": train["arrival_time"]})
+        tickets.append({"pnr": pnr, "passenger": name, "age": age, "departure_time": train["departure_time"], "arrival_time": train["arrival_time"]})
+    train["seats"] -= num
+    save_bookings()
+    print(f"\n{num} ticket(s) booked for {train['name']}.")
+    print("-" * 71)
+    print(f"{'PNR':<8} | {'Passenger':<20} | {'Age':<5} | {'Departure':<12} | {'Arrival':<12} |")
+    print("-" * 71)
+    for t in tickets: print(f"{t['pnr']:<8} | {t['passenger']:<20} | {t['age']:<5} | {t['departure_time']:<12} | {t['arrival_time']:<12} |")
+    print("-" * 71)
+
+def cancel_ticket():
+    if not bookings: print("No bookings."); return
+    pnr = input("Enter PNR to cancel: ").strip().upper()
+    for b in bookings:
+        if b["pnr"] == pnr:
+            next(t for t in trains if t["number"] == b["train_no"])["seats"] += 1
+            bookings.remove(b)
+            save_bookings()
+            print(f"Booking {pnr} cancelled.")
+            return
+    print("PNR not found.")
+
+def main():
+    load_data()
+    while True:
+        print("\nTRAIN RESERVATION SYSTEM\n \n1. Show Trains\n2. Book Ticket\n3. Cancel Ticket\n4. Exit")
+        print()
+        c = input("Enter Your Choice: ")
+        if c == '1': show_trains()
+        elif c == '2': book_ticket()
+        elif c == '3': cancel_ticket()
+        elif c == '4': print("Goodbye!"); break
+        else: print("Invalid choice.")
+
+if __name__ == "__main__": main()
+
